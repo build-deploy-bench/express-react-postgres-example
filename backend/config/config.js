@@ -1,3 +1,6 @@
+// Environment variables are strings, while Sequelize expects false or a function.
+const sqlLogging = (value) => value === "true" ? console.log : false;
+
 /** @type {import('sequelize').Options} */
 module.exports = {
   development: {
@@ -6,7 +9,7 @@ module.exports = {
     database: process.env.DEV_DB_NAME,
     host: process.env.DEV_DB_HOSTNAME,
     dialect: process.env.DEV_DB_DIALECT,
-    logging: process.env.DEV_DB_LOGGING,
+    logging: sqlLogging(process.env.DEV_DB_LOGGING),
   },
   test: {
     username: process.env.TEST_DB_USERNAME,
@@ -14,7 +17,7 @@ module.exports = {
     database: process.env.TEST_DB_NAME,
     host: process.env.TEST_DB_HOSTNAME,
     dialect: process.env.TEST_DB_DIALECT,
-    logging: process.env.TEST_DB_LOGGING,
+    logging: sqlLogging(process.env.TEST_DB_LOGGING),
   },
   production: {
     username: process.env.PROD_DB_USERNAME,
@@ -22,6 +25,6 @@ module.exports = {
     database: process.env.PROD_DB_NAME,
     host: process.env.PROD_DB_HOSTNAME,
     dialect: process.env.PROD_DB_DIALECT,
-    logging: process.env.PROD_DB_LOGGING,
+    logging: sqlLogging(process.env.PROD_DB_LOGGING),
   },
 };
