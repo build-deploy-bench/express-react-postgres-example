@@ -23,6 +23,9 @@ const BUILD_COMMIT = (() => {
   }
 })();
 
+// The harness sets BENCH_RUN_ID before each deploy, and each deployment keeps the env it started with.
+const RUN_ID = process.env.BENCH_RUN_ID || "unknown";
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -33,7 +36,7 @@ if (process.env.NODE_ENV === "production") {
   app.get("/", (req, res) => res.json({ status: "API is running on /api" }));
 }
 // Independent of the database, so the benchmark probe can identify the deployment before any query works.
-app.get("/version", (req, res) => res.json({ commit: BUILD_COMMIT }));
+app.get("/version", (req, res) => res.json({ commit: BUILD_COMMIT, run: RUN_ID }));
 app.use("/api/users", usersRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/articles", articlesRoutes);
