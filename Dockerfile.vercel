@@ -1,0 +1,34 @@
+# Vercel Container Runtime image. Vercel detects this name eagerly; Render, Railway and Fly ignore it.
+# Keep Dockerfile.fly and Dockerfile.vercel identical below this line, so both providers do the same build work.
+FROM node:24-slim AS build
+WORKDIR /app
+
+# Install and build are separate RUN steps so the ::bench:: markers and BuildKit step times stay separable.
+# Manifests are copied first so a warm layer cache can skip the install step.
+COPY package.json package-lock.json ./
+COPY backend/package.json backend/package.json
+COPY frontend/package.json frontend/package.json
+COPY bench/build.sh bench/build.sh
+RUN sh ./bench/build.sh install
+
+# Copy only the app sources. A local checkout has a host node_modules that must not reach the image.
+COPY backend backend
+COPY frontend frontend
+# The provider passes the commit as a build arg (Vercel: VERCEL_GIT_COMMIT_SHA; Fly: the harness sets
+# BENCH_COMMIT). Declared after the install step, so a new commit does not invalidate the install layer.
+ARG BENCH_COMMIT
+ARG VERCEL_GIT_COMMIT_SHA
+RUN sh ./bench/build.sh build
+
+FROM node:24-slim
+ENV NODE_ENV=production \
+    PORT=80
+WORKDIR /app
+COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/backend ./backend
+COPY --from=build /app/frontend/dist ./frontend/dist
+EXPOSE 80
+# Same start command as Render and Railway, so app boot time is comparable. npm runs it with cwd backend,
+# which the app needs to resolve ../frontend/dist.
+CMD ["npm", "run", "start", "-w", "backend"]

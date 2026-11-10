@@ -1,6 +1,8 @@
 require("dotenv").config();
 const env = process.env.NODE_ENV || "development";
 const PORT = process.env.PORT || 3001;
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const { sequelize } = require("./models");
@@ -12,6 +14,15 @@ const articlesRoutes = require("./routes/articles");
 const profilesRoutes = require("./routes/profiles");
 const tagsRoutes = require("./routes/tags");
 
+// The commit that bench/build.sh recorded at build time, or "unknown" without a build.
+const BUILD_COMMIT = (() => {
+  try {
+    return fs.readFileSync(path.join(__dirname, ".build-commit"), "utf8").trim() || "unknown";
+  } catch {
+    return "unknown";
+  }
+})();
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -21,6 +32,8 @@ if (process.env.NODE_ENV === "production") {
 } else {
   app.get("/", (req, res) => res.json({ status: "API is running on /api" }));
 }
+// Independent of the database, so the benchmark probe can identify the deployment before any query works.
+app.get("/version", (req, res) => res.json({ commit: BUILD_COMMIT }));
 app.use("/api/users", usersRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/articles", articlesRoutes);
