@@ -6,9 +6,9 @@ This file lists only the changes to the app.
 ## Patches
 
 1. `bench/build.sh {install|build|all}` prints the `::bench::` markers. Install is `npm ci`; build is the frontend Vite build.
-2. `GET /version` returns `{"commit":"<sha>","run":"<id>"}`. `bench/build.sh build` writes `backend/.build-commit` from the
+2. `GET /version` returns `{"commit":"<sha>","run":"<id>","deployment":"<id>"}`. `bench/build.sh build` writes `backend/.build-commit` from the
    first value it finds in `BENCH_COMMIT`, `RENDER_GIT_COMMIT`, `RAILWAY_GIT_COMMIT_SHA` or `VERCEL_GIT_COMMIT_SHA`,
-   then `git rev-parse HEAD`, and then `unknown`. `run` is the runtime env var `BENCH_RUN_ID` (else `unknown`). The harness sets it before each deploy, so it identifies the deployment even when the commit is the same. The route does not query the database, but the server listens only
+   then `git rev-parse HEAD`, and then `unknown`. `run` is the runtime env var `BENCH_RUN_ID` (else `unknown`). The harness sets it before each deploy, so it identifies the deployment even when the commit is the same. `deployment` is `RAILWAY_DEPLOYMENT_ID` (else `unknown`): Railway gets no `BENCH_RUN_ID`, because a changed variable invalidates part of its build cache. The route does not query the database, but the server listens only
    after `sequelize.sync` succeeds.
 3. `PROD_DB_URL` overrides the `PROD_DB_*` parts (Vercel with Neon, Fly). `PROD_DB_SSL=true` enables TLS for a host
    whose URL has no `sslmode`.
