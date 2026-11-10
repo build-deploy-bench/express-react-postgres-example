@@ -21,3 +21,9 @@ This file lists only the changes to the app.
 - Start: `npm run start -w backend`. Health path: `/api/tags`. Commit check: `/version`.
 - Fly: `flyctl deploy --config fly.toml --app <app> --build-arg BENCH_COMMIT=<full sha>` from a clean `git archive`
   of the commit. Without `BENCH_COMMIT`, `/version` returns `unknown`.
+
+## Fly smoke check
+
+2026-11-10: `flyctl deploy --remote-only --depot=false --ha=false --build-arg BENCH_COMMIT=<sha>` of `1a42f0b` from a
+`git archive`. The Machine was stopped since 2026-11-06, and the deploy updated it without a start; after
+`flyctl machine start`, `/version` returned that SHA and `/api/tags` returned 200.
