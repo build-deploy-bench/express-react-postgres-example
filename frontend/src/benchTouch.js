@@ -1,1 +1,1 @@
-export const BENCH_TOUCH = "2026-11-11-samples-v2-fly-node-r2-214040";
+export const BENCH_TOUCH = "2026-11-11-samples-v2-render-node-r1-214322";
