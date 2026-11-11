@@ -29,6 +29,6 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/backend ./backend
 COPY --from=build /app/frontend/dist ./frontend/dist
 EXPOSE 80
-# Same start command as Render and Railway, so app boot time is comparable. npm runs it with cwd backend,
-# which the app needs to resolve ../frontend/dist.
-CMD ["npm", "run", "start", "-w", "backend"]
+COPY bench/start.sh bench/start.sh
+# Same start command as Render and Railway, so app boot time is comparable.
+CMD ["sh", "./bench/start.sh"]

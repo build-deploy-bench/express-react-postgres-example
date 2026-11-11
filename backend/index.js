@@ -54,9 +54,11 @@ app.use(errorHandler);
   try {
     await sequelize.sync({ alter: true });
     console.log(`Connection with ${env} database has been established.`);
-    app.listen(PORT, "0.0.0.0", () =>
-      console.log(`Server running on port ${PORT}`),
-    );
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+      // The benchmark parsers read this marker as the end of app boot.
+      console.log(`::bench::listening ${Date.now()}`);
+    });
   } catch (error) {
     console.error("Unable to initialize the database:", error);
     process.exitCode = 1;
