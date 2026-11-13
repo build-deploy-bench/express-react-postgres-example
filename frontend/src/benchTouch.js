@@ -1,1 +1,1 @@
-export const BENCH_TOUCH = "2026-11-13-gh4-render-node-r1-214356";
+export const BENCH_TOUCH = "2026-11-13-gh4-render-node-r2-214508";
