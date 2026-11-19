@@ -1,6 +1,8 @@
 require("dotenv").config();
 const env = process.env.NODE_ENV || "development";
 const PORT = process.env.PORT || 3001;
+const fs = require("fs");
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const { sequelize } = require("./models");
@@ -12,24 +14,32 @@ const articlesRoutes = require("./routes/articles");
 const profilesRoutes = require("./routes/profiles");
 const tagsRoutes = require("./routes/tags");
 
+// The commit that bench/build.sh recorded at build time, or "unknown" without a build.
+const BUILD_COMMIT = (() => {
+  try {
+    return fs.readFileSync(path.join(__dirname, ".build-commit"), "utf8").trim() || "unknown";
+  } catch {
+    return "unknown";
+  }
+})();
+
+// The harness sets BENCH_RUN_ID before each deploy, and each deployment keeps the env it started with.
+const RUN_ID = process.env.BENCH_RUN_ID || "unknown";
+// Railway gets no BENCH_RUN_ID: a changed variable invalidates part of its build cache. Its own deployment ID
+// identifies the deployment instead.
+const DEPLOYMENT_ID = process.env.RAILWAY_DEPLOYMENT_ID || "unknown";
+
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-(async () => {
-  try {
-    await sequelize.sync({ alter: true });
-    console.log(`Connection with ${env} database has been established.`);
-  } catch (error) {
-    console.error("Unable to connect to the database:", error);
-  }
-})();
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static("../frontend/dist"));
 } else {
   app.get("/", (req, res) => res.json({ status: "API is running on /api" }));
 }
+// Independent of the database, so the benchmark probe can identify the deployment before any query works.
+app.get("/version", (req, res) => res.json({ commit: BUILD_COMMIT, run: RUN_ID, deployment: DEPLOYMENT_ID }));
 app.use("/api/users", usersRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/articles", articlesRoutes);
@@ -40,6 +50,18 @@ app.get("/*any", (req, res) =>
 );
 app.use(errorHandler);
 
-app.listen(PORT, () =>
-  console.log(`Server running on http://localhost:${PORT}`),
-);
+(async () => {
+  try {
+    await sequelize.sync({ alter: true });
+    console.log(`Connection with ${env} database has been established.`);
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
+      // The benchmark parsers read this marker as the end of app boot.
+      console.log(`::bench::listening ${Date.now()}`);
+    });
+  } catch (error) {
+    console.error("Unable to initialize the database:", error);
+    process.exitCode = 1;
+    await sequelize.close();
+  }
+})();
